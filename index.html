@@ -115,6 +115,7 @@
     <g id="ticks"></g>
     <g id="pins"></g>
   </svg>
+  <p style="font-size:11px; color:var(--text-faint); margin:2px 0 20px; text-align:center;">The visible spectrum from 400–700 nm, with the three wavelengths this test uses marked: green (546), yellow (590), and red (670).</p>
 
   <div class="card" id="setupCard">
     <div class="level-grid" id="levelGrid"></div>
@@ -127,8 +128,7 @@
 
   <div class="card warn-box hidden" id="warningCard">
     <div class="eyebrow" style="color:var(--coral);">Photosensitive seizure warning</div>
-    <p style="color:var(--text); font-size:16px;">This test uses rapid flashing color patches — 150 ms flashes, three per trial, 24 trials.</p>
-    <p>If you or anyone watching has photosensitive epilepsy, a seizure disorder, or is otherwise sensitive to flashing lights, do not proceed.</p>
+    <p style="color:var(--text); font-size:16px;">This test uses rapid flashing lights. If you're sensitive to flashing lights or have photosensitive epilepsy, do not proceed.</p>
     <button class="primary" id="proceedBtn" style="width:100%; margin-top:8px;">proceed</button>
   </div>
 
@@ -143,6 +143,7 @@
         <button data-choice="2" disabled>2</button>
         <button data-choice="3" disabled>3</button>
       </div>
+      <button class="dev-link" id="skipToResultsBtn" style="margin-top:18px;">skip to results</button>
     </div>
   </div>
 
@@ -266,6 +267,11 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   document.getElementById('resultsCard').classList.add('hidden');
   document.getElementById('setupCard').classList.remove('hidden');
 });
+document.getElementById('skipToResultsBtn').addEventListener('click', ()=>{
+  if(state.timers) state.timers.forEach(id=>clearTimeout(id));
+  document.querySelectorAll('#responseRow button').forEach(b=>b.disabled=true);
+  finish();
+});
 document.querySelectorAll('#responseRow button').forEach(b=>{
   b.addEventListener('click',()=>respond(parseInt(b.dataset.choice)));
 });
@@ -328,7 +334,7 @@ function playSequence(trial){
     state.timers.push(setTimeout(()=>{ patch.style.background='#1a1c1e'; label.textContent='\u00A0'; }, i*(SHOW+GAP)+SHOW));
   });
   state.timers.push(setTimeout(()=>{
-    label.textContent='which interval differed?';
+    label.textContent='which one was different?';
     document.querySelectorAll('#responseRow button').forEach(b=>b.disabled=false);
   }, 2*(SHOW+GAP)+SHOW+150));
 }
@@ -364,15 +370,15 @@ function finish(){
 
   state.levels.forEach((lvl,i)=>{
     const r=state.results[i];
-    const pct=r.total? Math.round(100*r.correct/r.total):0;
+    const pct=r.total? Math.round(100*r.correct/r.total):null;
     const row=document.createElement('div');
     row.className='bar-row';
     row.innerHTML=`
       <div class="bar-label">${Math.round(lvl.factor*100)}%</div>
       <div class="bar-track">
-        <div class="bar-fill" style="width:${pct}%; background:${pct<=45?'var(--coral)':'var(--teal)'}"></div>
+        <div class="bar-fill" style="width:${pct===null?0:pct}%; background:${pct===null?'var(--line)':(pct<=45?'var(--coral)':'var(--teal)')}"></div>
       </div>
-      <div class="bar-pct">${pct}%</div>
+      <div class="bar-pct">${pct===null?'—':pct+'%'}</div>
     `;
     chart.appendChild(row);
   });
