@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tetrachromacy test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0D0F; --panel:#14171A; --line:#262B30; --line-soft:#1D2126;
+    --text:#E7E4DC; --text-dim:#8B9096; --text-faint:#565C62;
+    --amber:#E8A33D; --teal:#4FA88A; --coral:#D9714E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif; line-height:1.6;
+    padding:48px 20px 80px;
+  }
+  .wrap{max-width:640px; margin:0 auto;}
+  h1{
+    font-family:'Space Grotesk', sans-serif; font-weight:600;
+    font-size:26px; letter-spacing:-0.01em; margin:0 0 4px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--amber); margin:0 0 14px;
+  }
+  p{color:var(--text-dim); font-size:14.5px; margin:0 0 12px;}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:24px; margin:20px 0; position:relative; min-height:400px;
+    box-sizing:border-box; display:flex; flex-direction:column; justify-content:center;
+  }
+  .exit-btn{
+    position:absolute; top:12px; right:12px; width:28px; height:28px;
+    border-radius:50%; border:1px solid var(--line); background:transparent;
+    color:var(--text-dim); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0; font-size:14px; line-height:1;
+  }
+  .exit-btn:hover{border-color:var(--text-dim); color:var(--text);}
+  /* wavelength ruler */
+  .ruler{width:100%; height:auto; margin:8px 0 4px;}
+  .ruler text{font-family:'IBM Plex Mono', monospace; font-size:9px; fill:var(--text-faint);}
+  .ruler .pin-label{font-size:10px; font-weight:500;}
+  /* setup */
+  label{display:block; font-size:13px; color:var(--text-dim); margin-bottom:6px;}
+  .level-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin:4px 0 14px;}
+  .level-swatch{text-align:center;}
+  .swatch-sm{width:100%; aspect-ratio:1; border-radius:12px; border:2px solid var(--line);}
+  .level-pct{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim); margin:8px 0 0;}
+  .level-excl{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); margin:1px 0 0;}
+  .preview-note{font-size:11.5px; color:var(--text-faint); margin:0; text-align:center; font-style:italic; line-height:1.5;}
+  .preview-info{font-size:12.5px; color:var(--text-dim); text-align:center; margin:0 0 4px;}
+  .preview-info b{color:var(--text); font-family:'IBM Plex Mono', monospace; font-weight:500;}
+  button{
+    font-family:'IBM Plex Sans', sans-serif; font-weight:500; font-size:14px;
+    background:transparent; color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:11px 18px; cursor:pointer;
+  }
+  button:hover:not(:disabled){border-color:var(--text-dim);}
+  button:disabled{opacity:0.35; cursor:default;}
+  .primary{border-color:var(--amber); color:var(--amber);}
+  .dev-link{
+    width:100%; margin-top:6px; border:none; background:none; padding:4px;
+    font-size:11px; color:var(--text-faint); text-decoration:underline;
+    text-underline-offset:2px; cursor:pointer;
+  }
+  .dev-link:hover{color:var(--text-dim); border:none;}
+  .primary:hover:not(:disabled){background:rgba(232,163,61,0.08);}
+  /* trial view */
+  .stage{display:flex; flex-direction:column; align-items:center; padding:20px 0 8px;}
+  .patch{
+    width:150px; height:150px; border-radius:50%; background:#1a1c1e;
+    border:1px solid var(--line); transition:background 0.05s;
+  }
+  .interval-label{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-faint);
+    margin-top:14px; letter-spacing:0.08em; min-height:15px; line-height:15px;
+  }
+  .progress{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-faint); margin-bottom:2px;}
+  .response-row{display:flex; gap:10px; margin-top:22px; justify-content:center;}
+  .response-row button{width:64px; height:64px; border-radius:50%; font-family:'IBM Plex Mono', monospace; font-size:18px;}
+  /* results */
+  .bar-row{display:flex; align-items:center; gap:10px;}
+  .bar-label{width:58px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-dim); text-align:right; flex-shrink:0;}
+  .bar-track{flex:1; height:16px; background:var(--line-soft); border-radius:4px; position:relative; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:4px;}
+  .bar-pct{width:38px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-dim); flex-shrink:0;}
+  .chance-line{position:absolute; top:-5px; bottom:-5px; left:calc(33% + 30px); width:3px; background:var(--amber); opacity:1;}
+  #barChart{position:relative; display:flex; flex-direction:column; gap:9px;}
+  .legend{display:flex; gap:16px; font-size:12px; color:var(--text-dim); margin-top:10px;}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  hr{border:none; border-top:1px solid var(--line); margin:22px 0;}
+  .note{font-size:12.5px; color:var(--text-faint); border-left:2px solid var(--line); padding-left:12px;}
+  .credit{font-size:11.5px; color:var(--text-faint); text-align:center; margin:24px 0 0;}
+  .credit a{color:var(--amber); text-decoration:none; border-bottom:1px solid rgba(232,163,61,0.35);}
+  .credit a:hover{border-bottom-color:var(--amber);}
+  .warn-box{border-color:var(--coral);}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Vision science demonstration</div>
+  <h1>Tetrachromacy test</h1>
+  <p>An interactive recreation of the discrimination paradigm used to screen for candidate tetrachromacy in Jordan &amp; Mollon's studies of women heterozygous for anomalous cone photopigments — <span style="color:var(--text-faint)">read the caveat at the bottom before drawing any conclusions from your own result.</span></p>
+
+  <svg class="ruler" viewBox="0 0 600 46">
+    <line x1="20" y1="20" x2="580" y2="20" stroke="#333941" stroke-width="1"/>
+    <g id="ticks"></g>
+    <g id="pins"></g>
+  </svg>
+
+  <div class="card" id="setupCard">
+    <div class="level-grid" id="levelGrid"></div>
+    <p class="preview-note">The excluded swatch (labeled below) is identical RGB to the mixture, a screen limitation — real 546/590/670 nm light wouldn't collapse this way.</p>
+
+    <p style="margin-top:14px;">Three flashes per trial — two are 590 nm yellow, one is this mixture. Pick the one that looked different. 24 trials, under 2 minutes.</p>
+    <button class="primary" id="startBtn" style="width:100%; margin-top:8px;">begin test</button>
+    <!-- <button class="dev-link" id="devSkipBtn">dev: skip to results</button> -->
+  </div>
+
+  <div class="card warn-box hidden" id="warningCard">
+    <div class="eyebrow" style="color:var(--coral);">Photosensitive seizure warning</div>
+    <p style="color:var(--text); font-size:16px;">This test uses rapid flashing color patches — 150 ms flashes, three per trial, 24 trials.</p>
+    <p>If you or anyone watching has photosensitive epilepsy, a seizure disorder, or is otherwise sensitive to flashing lights, do not proceed.</p>
+    <button class="primary" id="proceedBtn" style="width:100%; margin-top:8px;">proceed</button>
+  </div>
+
+  <div class="card hidden" id="trialCard">
+    <button class="exit-btn" id="exitBtn" aria-label="Exit test" title="Exit test">&#10005;</button>
+    <div class="progress" id="progressLabel">trial 1 / 24</div>
+    <div class="stage">
+      <div class="patch" id="patch"></div>
+      <div class="interval-label" id="intervalLabel">watch closely</div>
+      <div class="response-row" id="responseRow">
+        <button data-choice="1" disabled>1</button>
+        <button data-choice="2" disabled>2</button>
+        <button data-choice="3" disabled>3</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="resultsCard">
+    <div class="eyebrow" style="margin-bottom:2px;">Result</div>
+    <div style="text-align:center; margin:8px 0 20px;">
+      <div style="font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint);">overall accuracy</div>
+      <div id="overallPct" style="font-family:'Space Grotesk', sans-serif; font-size:56px; font-weight:600; color:var(--text);">—</div>
+    </div>
+    <div class="bar-row" style="margin-bottom:4px;">
+      <div class="bar-label" style="color:var(--text-faint);">brightness</div>
+      <div class="bar-track" style="background:none;"></div>
+      <div class="bar-pct" style="color:var(--text-faint);">accuracy</div>
+    </div>
+    <div id="barChart"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--teal)"></span>correct rate</span>
+      <span><span class="dot" style="background:var(--amber)"></span>chance (33%)</span>
+    </div>
+    <button id="restartBtn">try again</button>
+  </div>
+
+  <p class="note">
+    24 trials here is 6 brightness levels × 4 repetitions, swept around the crossover ratio — a demo-sized simplification. The original study tested 10 ratios × 9 luminances × 3 blocks, 270 trials per participant, after practice runs. The level that would land exactly on the crossover is deliberately left out: at that one brightness, this screen renders the mixture and the yellow as the literal same RGB value, so no one — trichromat, tetrachromat, anyone — could ever get it right. That's not a metameric match the way a real colorimeter produces it, just one stimulus rendered twice, so including it would only test whether you can find a nonexistent difference. Because that level is excluded, both a trichromat and a real tetrachromat are predicted to score near 100% on the remaining six — the one condition that would actually separate them isn't part of this sweep. The ratio itself is fixed at this system's one true crossover point, since only that ratio makes the swatches above nearly identical — at any other ratio, no amount of brightness adjustment would close the gap, because the mixture and the yellow trace different lines through color space. Flashes run 150 ms each with a 300 ms gap, matching the original study's timing. This all runs on an RGB screen, which is itself a three-primary system — it cannot present the independent four-dimensional stimuli a real tetrachromacy test requires, which is why the original studies used a custom colorimeter with genuine spectral lights instead of any display. It's built to make the logic of the discrimination task easier to follow, not to diagnose anyone. In the original work, only one of the 25 obligate carriers tested performed the way a true tetrachromat was predicted to.
+  </p>
+
+  <p class="credit">Inspired by <a href="https://www.newyorker.com/magazine/2026/08/03/what-would-it-mean-to-see-a-new-color">"What Would It Mean to See a New Color?"</a>, The New Yorker.</p>
+
+</div>
+
+<script>
+function wavelengthToRGB(w){
+  let R,G,B;
+  if(w<440){R=-(w-440)/(440-380);G=0;B=1;}
+  else if(w<490){R=0;G=(w-440)/(490-440);B=1;}
+  else if(w<510){R=0;G=1;B=-(w-510)/(510-490);}
+  else if(w<580){R=(w-510)/(580-510);G=1;B=0;}
+  else if(w<645){R=1;G=-(w-645)/(645-580);B=0;}
+  else {R=1;G=0;B=0;}
+  const adj=c=>Math.round(255*Math.pow(Math.max(c,0),0.8));
+  return [adj(R),adj(G),adj(B)];
+}
+const GREEN=wavelengthToRGB(546), RED=wavelengthToRGB(670), YELLOW=wavelengthToRGB(590);
+const rgbStr=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
+const clamp255=v=>Math.max(0,Math.min(255,Math.round(v)));
+const dist=(a,b)=>Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2);
+const lerp=(a,b,p)=>[0,1,2].map(i=>clamp255(a[i]*(1-p)+b[i]*p));
+
+const REPS=4, SHOW=150, GAP=300;
+const LEVEL_OFFSETS=[-0.27,-0.18,-0.09,0.09,0.18,0.27];
+
+// projection of a mixture color onto the yellow ray gives the best-achievable
+// scalar brightness match for that mixture (exact zero distance only at the
+// one ratio where the mixture's hue equals the yellow's hue)
+function bestMatchFactor(mixColor){
+  const dot=mixColor[0]*YELLOW[0]+mixColor[1]*YELLOW[1];
+  const norm=YELLOW[0]*YELLOW[0]+YELLOW[1]*YELLOW[1];
+  return dot/norm;
+}
+function buildLevels(mixColor){
+  const sOpt=bestMatchFactor(mixColor);
+  return LEVEL_OFFSETS.map(off=>{
+    const f=Math.max(0.05,sOpt+off);
+    const c=YELLOW.map(v=>clamp255(v*f));
+    return {factor:f, color:c, distance:dist(c,mixColor)};
+  });
+}
+// analytic ratio (0-1, proportion red) at which the mixture's hue exactly
+// equals the yellow's hue — the one true crossover point on this system
+const P_MATCH=(GREEN[1]*YELLOW[0]-GREEN[0]*YELLOW[1])/((RED[0]-GREEN[0])*YELLOW[1]-(RED[1]-GREEN[1])*YELLOW[0]);
+
+// wavelength ruler
+(function drawRuler(){
+  const ticks=document.getElementById('ticks'), pins=document.getElementById('pins');
+  const x=w=>20+(w-400)/(700-400)*560;
+  for(let w=400; w<=700; w+=50){
+    const tx=x(w);
+    ticks.innerHTML+=`<line x1="${tx}" y1="17" x2="${tx}" y2="23" stroke="#333941"/><text x="${tx}" y="38" text-anchor="middle">${w}</text>`;
+  }
+  const markers=[[546,'#4FA88A','546'],[590,'#E8A33D','590'],[670,'#D9714E','670']];
+  markers.forEach(([w,color,label])=>{
+    const tx=x(w);
+    pins.innerHTML+=`<circle cx="${tx}" cy="20" r="4" fill="${color}"/><text class="pin-label" x="${tx}" y="12" text-anchor="middle" fill="${color}">${label}</text>`;
+  });
+})();
+
+function buildLevelGrid(){
+  const mixColor=lerp(GREEN,RED,P_MATCH);
+  const sOpt=bestMatchFactor(mixColor);
+  const matchColor=YELLOW.map(v=>clamp255(v*Math.max(sOpt,0.05)));
+  const entries=buildLevels(mixColor).map(l=>({factor:l.factor, color:l.color, excluded:false}));
+  entries.push({factor:sOpt, color:matchColor, excluded:true});
+  entries.sort((a,b)=>a.factor-b.factor);
+
+  const grid=document.getElementById('levelGrid');
+  grid.innerHTML='';
+  entries.forEach(e=>{
+    const cell=document.createElement('div');
+    cell.className='level-swatch';
+    cell.innerHTML=`
+      <div class="swatch-sm${e.excluded?' excluded':''}" style="background:${rgbStr(e.color)};"></div>
+      <p class="level-pct">${Math.round(e.factor*100)}%</p>
+      ${e.excluded?'<p class="level-excl">excluded</p>':''}
+    `;
+    grid.appendChild(cell);
+  });
+}
+buildLevelGrid();
+
+let state={};
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  document.getElementById('setupCard').classList.add('hidden');
+  document.getElementById('warningCard').classList.remove('hidden');
+});
+document.getElementById('proceedBtn').addEventListener('click', ()=>{
+  document.getElementById('warningCard').classList.add('hidden');
+  startTest();
+});
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  document.getElementById('resultsCard').classList.add('hidden');
+  document.getElementById('setupCard').classList.remove('hidden');
+});
+document.querySelectorAll('#responseRow button').forEach(b=>{
+  b.addEventListener('click',()=>respond(parseInt(b.dataset.choice)));
+});
+/*
+document.getElementById('devSkipBtn').addEventListener('click', ()=>{
+  const mixColor=lerp(GREEN,RED,P_MATCH);
+  const levels=buildLevels(mixColor);
+  let minIdx=0;
+  levels.forEach((lvl,i)=>{ if(lvl.distance<levels[minIdx].distance) minIdx=i; });
+  const results=levels.map((lvl,i)=>{
+    const total=REPS;
+    const correct = i===minIdx
+      ? Math.round(total*(0.15+Math.random()*0.35))
+      : Math.round(total*(0.65+Math.random()*0.35));
+    return {correct:Math.min(correct,total), total};
+  });
+  state={mixColor, levels, trials:[], idx:levels.length*REPS, results, timers:[]};
+  document.getElementById('setupCard').classList.add('hidden');
+  document.getElementById('warningCard').classList.add('hidden');
+  document.getElementById('trialCard').classList.add('hidden');
+  finish();
+});
+*/
+
+function startTest(){
+  const p=P_MATCH;
+  const mixColor=lerp(GREEN,RED,p);
+  const levels=buildLevels(mixColor);
+  const trials=[];
+  levels.forEach((lvl,li)=>{
+    for(let r=0;r<REPS;r++){
+      const oddPos=Math.floor(Math.random()*3);
+      const colors=[lvl.color,lvl.color,lvl.color];
+      colors[oddPos]=mixColor;
+      trials.push({levelIndex:li, oddPos, colors});
+    }
+  });
+  for(let i=trials.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [trials[i],trials[j]]=[trials[j],trials[i]];
+  }
+  state={mixColor, levels, trials, idx:0, results:levels.map(()=>({correct:0,total:0})), timers:[]};
+  document.getElementById('setupCard').classList.add('hidden');
+  document.getElementById('trialCard').classList.remove('hidden');
+  nextTrial();
+}
+
+function nextTrial(){
+  if(state.idx>=state.trials.length){ finish(); return; }
+  document.getElementById('progressLabel').textContent=`trial ${state.idx+1} / ${state.trials.length}`;
+  document.querySelectorAll('#responseRow button').forEach(b=>b.disabled=true);
+  playSequence(state.trials[state.idx]);
+}
+
+function playSequence(trial){
+  const patch=document.getElementById('patch'), label=document.getElementById('intervalLabel');
+  patch.style.background='#1a1c1e'; label.textContent='watch closely';
+  [0,1,2].forEach(i=>{
+    state.timers.push(setTimeout(()=>{ patch.style.background=rgbStr(trial.colors[i]); label.textContent='interval '+(i+1); }, i*(SHOW+GAP)));
+    state.timers.push(setTimeout(()=>{ patch.style.background='#1a1c1e'; label.textContent='\u00A0'; }, i*(SHOW+GAP)+SHOW));
+  });
+  state.timers.push(setTimeout(()=>{
+    label.textContent='which interval differed?';
+    document.querySelectorAll('#responseRow button').forEach(b=>b.disabled=false);
+  }, 2*(SHOW+GAP)+SHOW+150));
+}
+
+function respond(choice){
+  document.querySelectorAll('#responseRow button').forEach(b=>b.disabled=true);
+  const trial=state.trials[state.idx];
+  const li=trial.levelIndex;
+  state.results[li].total++;
+  if(choice-1===trial.oddPos) state.results[li].correct++;
+  state.idx++;
+  state.timers.push(setTimeout(nextTrial,350));
+}
+
+function exitTest(){
+  if(state.timers) state.timers.forEach(id=>clearTimeout(id));
+  document.getElementById('trialCard').classList.add('hidden');
+  document.getElementById('resultsCard').classList.add('hidden');
+  document.getElementById('setupCard').classList.remove('hidden');
+}
+document.getElementById('exitBtn').addEventListener('click', exitTest);
+
+function finish(){
+  document.getElementById('trialCard').classList.add('hidden');
+  document.getElementById('resultsCard').classList.remove('hidden');
+  const chart=document.getElementById('barChart');
+  chart.innerHTML='';
+
+  const totalCorrect=state.results.reduce((s,r)=>s+r.correct,0);
+  const totalTrials=state.results.reduce((s,r)=>s+r.total,0);
+  const overallPct=totalTrials? Math.round(100*totalCorrect/totalTrials):0;
+  document.getElementById('overallPct').textContent=overallPct+'%';
+
+  state.levels.forEach((lvl,i)=>{
+    const r=state.results[i];
+    const pct=r.total? Math.round(100*r.correct/r.total):0;
+    const row=document.createElement('div');
+    row.className='bar-row';
+    row.innerHTML=`
+      <div class="bar-label">${Math.round(lvl.factor*100)}%</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%; background:${pct<=45?'var(--coral)':'var(--teal)'}"></div>
+      </div>
+      <div class="bar-pct">${pct}%</div>
+    `;
+    chart.appendChild(row);
+  });
+
+  const line=document.createElement('div');
+  line.className='chance-line';
+  chart.appendChild(line);
+}
+</script>
+</body>
+</html>
